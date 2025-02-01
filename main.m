@@ -79,12 +79,22 @@ end
 % Load and process the image
 img = imread('RandomDisks.jpg'); % Load image
 gray_img = rgb2gray(img);            % Convert to grayscale
-binary_img = imbinarize(gray_img, 0.5); % Convert to binary (0.5 is threshole)
+
+function bImg = im_gray_to_binary(gray_img,threshole)
+    [m,n]=size(gray_img);
+    bImg=zeros(m,n);
+    for i = 1:size(gray_img,1)
+        for j= 1:size(gray_img,2)
+            if gray_img(i,j) > threshole*256
+                bImg(i,j) = 1;
+            end
+        end
+    end
+end
+%binary_img = imbinarize(gray_img, 0.5); % Convert to binary (0.5 is threshole)
+binary_img = im_gray_to_binary(gray_img, 0.5); % Convert to binary (0.5 is threshole)
 
 % Apply noise filtering
-%se_noise = strel('disk', 2); % Structuring element for noise removal
-%filtered_img = imclose(imopen(binary_img, se_noise), se_noise); % Noise reduction
-
 [m,n] = size(binary_img);
 filtered_img = ones(m,n);
 for i = 1:m
@@ -97,7 +107,7 @@ for i = 1:m
 end
 
 
-%smallest disk is 18 biggest is 64
+%the radius of smallest disk is ~9px and biggest is ~32px
 % Define kernal for detect biggest and smallest disk. Other values ​​could be considered.
 ker1 = strel('disk', 28); 
 ker2 = strel('disk', 10); 
