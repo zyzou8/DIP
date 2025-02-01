@@ -82,8 +82,20 @@ gray_img = rgb2gray(img);            % Convert to grayscale
 binary_img = imbinarize(gray_img, 0.5); % Convert to binary (0.5 is threshole)
 
 % Apply noise filtering
-se_noise = strel('disk', 1); % Structuring element for noise removal
-filtered_img = imclose(imopen(binary_img, se_noise), se_noise); % Noise reduction
+%se_noise = strel('disk', 2); % Structuring element for noise removal
+%filtered_img = imclose(imopen(binary_img, se_noise), se_noise); % Noise reduction
+
+[m,n] = size(binary_img);
+filtered_img = ones(m,n);
+for i = 1:m
+    for j= 1:n
+        if i-2 < 1 || i+2 > m || j-2 < 1 || j+2>n
+            continue;
+        end
+        filtered_img(i,j) = median(median(binary_img(i-2:i+2,j-2:j+2)));
+    end
+end
+
 
 %smallest disk is 18 biggest is 64
 % Define kernal for detect biggest and smallest disk. Other values ​​could be considered.
