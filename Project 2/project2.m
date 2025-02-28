@@ -1,10 +1,47 @@
 clc; clear; close all;
 
+function im_erosed = erose_image(input_image,kernal)
+    %get im size
+    [Row, Col] = size(input_image);
+    % create a background im    
+    im_erosed=ones(Row, Col);
+    %get kernal size
+    [ker_Row,ker_Col] = size(kernal);
+    
+    %erosion process
+    for i_im  = 1 : Row %loop through rows
+        for j_im  = 1 : Col %loop through columns        
+            isOverlapse=true;
+            % check hit
+            for i_kn = 1 : size(kernal,1)
+                for j_kn = 1 : size(kernal,2)
+                    check_i = i_im +i_kn-floor(ker_Row/2)-1;
+                    check_j = j_im +j_kn-floor(ker_Col/2)-1;
+                    if check_i<1 || check_i>Row || check_j < 1 || check_j > Col
+                        continue;
+                    end
+                    if (kernal(i_kn,j_kn) ~= input_image(check_i,check_j)) && kernal(i_kn,j_kn)
+                        isOverlapse = false;
+                        break;
+                    end
+                end
+            end
+     
+            if isOverlapse
+                im_erosed(i_im, j_im) = 1 ; 
+            else
+                im_erosed(i_im, j_im) = 0 ; 
+            end
+        end
+    end
+end
+
 % Load binary image
 X = imread('penn256.gif');
 
 % X = imread('bear.gif');
 % X = imread('match1.gif');
+% X = imread('rectangle.gif');
 X = imbinarize(X); % convert to binary image
 
 % Define 8 foreground structuring elements
@@ -35,12 +72,15 @@ Bb = {
 i = 0;
 Xi = X;
 X_prev = zeros(size(X)); %X_prev means X(i-1)
+ero_tool = erosion;
 
 while ~isequal(Xi, X_prev) %if X doesnt change anymore stop looping
     X_prev = Xi; %keep the previous X before the thinning
     i = i + 1;
     for j = 1:8
-        Xi = Xi - bwhitmiss(Xi, Bf{j}, Bb{j}); % Hit-or-miss thinning
+        %Xi = Xi - bwhitmiss(Xi, Bf{j}, Bb{j}); % Hit-or-miss thinning
+        %Xi = Xi - ero_tool.bwhitmiss(Xi, Bf{j}, Bb{j}); % Hit-or-miss thinning
+        Xi = Xi - bitand(erose_image(Xi, Bf{j}), erose_image((1-Xi),Bb{j}));
     end
     
     % Save results at X2, X5, X10
