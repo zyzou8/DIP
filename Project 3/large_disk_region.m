@@ -1,55 +1,74 @@
 clc; clear; close all;
-
 % Read img
 org_img = imread('disk.gif');
 % Convert to grayscale if RGB
 if size(org_img,3) == 3
     org_img = rgb2gray(org_img);
 end
+% Convert to double for better numerical precision
+%org_img = double(org_img);
 
-%init starting imgs
-filtered_image = org_img;
+% Initialize starting imgs
+mean_img = org_img;
+median_img = org_img;
+alpha_img = org_img;
+sigma_img = org_img;
+snn_img = org_img;
 
-for i =1:5
-    filtered_image = mean_filter_5x5(filtered_image);
-    %filtered_image = median_filter_5x5(filtered_image);
-    %filtered_image = alpha_trimmed_mean_5x5(filtered_image,0.25);
-    %filtered_image = sigma_filter_5x5(filtered_image,20);
-    %filtered_image = snn_mean_filter_5x5(filtered_image);
+% Apply filters for 5 iterations
+for i = 1:5
+    mean_img = mean_filter_5x5(mean_img);
+    median_img = median_filter_5x5(median_img);
+    alpha_img = alpha_trimmed_mean_5x5(alpha_img, 0.25);
+    sigma_img = sigma_filter_5x5(sigma_img, 20);
+    snn_img = snn_mean_filter_5x5(snn_img);
 end
 
-% Get image dimensions
-[rows, cols] = size(filtered_image);
+set_imgFiltered = {mean_img, median_img, alpha_img, sigma_img, snn_img};
+filter_names = {'Mean', 'Median', 'Alpha-trimmed Mean', 'Sigma', 'Symmetric Nearest-Neighbor'};
 
-% Create coordinate matrices
+% Create the mask once (no need to recreate for each filter)
+[rows, cols] = size(org_img);
 [x, y] = meshgrid(1:cols, 1:rows);
-
-% Define disk center and radius (adjust these values based on your image)
-center_x = 95;  % Assuming disk is centered
-center_y = 115;  % Assuming disk is centered
-radius = 60;  % Adjust this based on disk size
-
-% Create circular mask
+center_x = 95;
+center_y = 115;
+radius = 60;
 disk_mask = ((x - center_x).^2 + (y - center_y).^2) <= radius^2;
 
-% Calculate statistics using the mask
-pixels_in_disk = double(filtered_image(disk_mask));
-disk_mean = mean(pixels_in_disk);
-disk_std = std(pixels_in_disk);
-
-% Display results
-fprintf('Disk region statistics:\n');
-fprintf('Mean: %.2f\n', disk_mean);
-fprintf('Standard deviation: %.2f\n', disk_std);
-
+% Optional: Display the mask to verify
 % Optionally visualize the mask
 figure;
-subplot(1,3,1);imshow(org_img);
+subplot(1,2,1);imshow(org_img);
 title('Original img');
-subplot(1,3,2);imshow(filtered_image);
-title('Original img');
-subplot(1,3,3);imshow(disk_mask);
+subplot(1,2,2);imshow(disk_mask);
 title('Disk Region Mask');
+
+% Print header for results table
+fprintf('%-30s %-15s %-15s\n', 'Filter Type', 'Mean', 'Standard Deviation');
+fprintf('%-30s %-15s %-15s\n', '----------', '----', '------------------');
+
+% Calculate and display statistics for each filter
+for i = 1:5
+    filtered_image = set_imgFiltered{i};
+    
+    % Calculate statistics using the mask
+    pixels_in_disk = double(filtered_image(disk_mask));
+    disk_mean = mean(pixels_in_disk);
+    disk_std = std(pixels_in_disk);
+    
+    % Display results
+    fprintf('%-30s %-15.2f %-15.2f\n', filter_names{i}, disk_mean, disk_std);
+end
+
+% Optionally visualize the mask
+%figure;
+%subplot(1,3,1);imshow(org_img);
+%title('Original img');
+%subplot(1,3,2);imshow(filtered_image);
+%title('Original img');
+%subplot(1,3,3);imshow(disk_mask);
+%title('Disk Region Mask');
+%saveas(gcf,"large_disk_region.png");
 
 function [mean] = mean_filter_5x5(f) %from mean3x3.m
     % Get image dimensions
